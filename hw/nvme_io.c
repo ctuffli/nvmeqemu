@@ -98,7 +98,7 @@ void post_cq_entry(NVMEState *n, NVMEIOCQueue *cq, NVMECQE* cqe)
 
     incr_cq_tail(cq);
     if (cq->irq_enabled) {
-        msix_notify(&(n->dev), cq->vector);
+        isr_notify(n, cq);
     }
 }
 

@@ -1266,7 +1266,7 @@ void async_process_cb(void *param)
                 break;
         }
     }
-    msix_notify(&(n->dev), 0);
+    isr_notify(n, &n->cq[0]);
 }
 
 static uint32_t adm_cmd_async_ev_req(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)

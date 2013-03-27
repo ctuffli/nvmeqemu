@@ -23,6 +23,8 @@
  */
 
 
+#include "msi.h"
+
 #include "nvme.h"
 #include "nvme_debug.h"
 #include "range.h"
@@ -67,6 +69,8 @@ void isr_notify(NVMEState *n, NVMEIOCQueue *cq)
     if (cq->irq_enabled) {
         if (msix_enabled(&(n->dev))) {
             msix_notify(&(n->dev), cq->vector);
+	} else if (msi_enabled(&(n->dev))) {
+            msi_notify(&(n->dev), cq->vector);
         } else {
             qemu_irq_pulse(n->dev.irq[0]);
         }
@@ -805,6 +809,7 @@ static void pci_space_init(PCIDevice *pci_dev)
         0xf & PCI_CLASS_STORAGE_EXPRESS);
 
     /* TODO: What with the rest of PCI fields? Capabilities? */
+    msi_init(pci_dev, 0, 1, true, true);
     pcie_cap_init(pci_dev, 0, PCI_EXP_TYPE_ENDPOINT, 0);
 
     /*other notation:  pci_config[OFFSET] = 0xff; */
