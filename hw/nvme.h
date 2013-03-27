@@ -21,8 +21,9 @@
 #define BYTES_PER_MB (1024ULL * 1024ULL)
 
 /* Config FIlE names */
-#define NVME_CONFIG_FILE "NVME_device_NVME_config"
-#define PCI_CONFIG_FILE "NVME_device_PCI_config"
+#define NVME_CONFIG_PATH "/opt/nvmeqemu/config/"
+#define NVME_CONFIG_FILE NVME_CONFIG_PATH "NVME_device_NVME_config"
+#define PCI_CONFIG_FILE NVME_CONFIG_PATH "NVME_device_PCI_config"
 /* Page size supported by the hardware */
 #define PAGE_SIZE 4096
 /* Should be in pci class someday. */
