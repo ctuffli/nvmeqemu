@@ -805,6 +805,7 @@ static void pci_space_init(PCIDevice *pci_dev)
         0xf & PCI_CLASS_STORAGE_EXPRESS);
 
     /* TODO: What with the rest of PCI fields? Capabilities? */
+    pcie_cap_init(pci_dev, 0, PCI_EXP_TYPE_ENDPOINT, 0);
 
     /*other notation:  pci_config[OFFSET] = 0xff; */
 
@@ -1140,6 +1141,7 @@ static PCIDeviceInfo nvme_info = {
     .qdev.size = sizeof(NVMEState),
     .qdev.vmsd = &vmstate_nvme,
     .qdev.reset = qdev_nvme_reset,
+    .is_express = 1,
     .config_write = nvme_pci_write_config,
     .config_read = nvme_pci_read_config,
     .init = pci_nvme_init,
