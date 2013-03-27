@@ -849,10 +849,10 @@ static void read_file(NVMEState *n, uint8_t space)
             fclose(config_file);
             LOG_ERR("Error Reading the Config File");
             if (space == NVME_SPACE) {
-                LOG_NORM("Defaulting the NVME space..");
+                LOG_NORM("Configuring the NVME space..");
                 nvme_set_registry(n);
             } else if (space == PCI_SPACE) {
-                LOG_NORM("Defaulting the PCI space..");
+                LOG_NORM("Configuring the PCI space..");
                 pci_space_init(&n->dev);
             }
         } else {
