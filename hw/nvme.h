@@ -55,6 +55,7 @@
 
 /* NVME Cntrl Space specific #defines */
 #define CC_EN 1
+#define CSTS_SHST_COMPLETE (1 << 3)
 /* Used to create masks */
 /* numbr  : Number of 1's required
  * offset : Offset from LSB

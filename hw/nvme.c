@@ -347,6 +347,10 @@ static void nvme_mmio_writel(void *opaque, target_phys_addr_t addr,
                 clear_nvme_device(nvme_dev);
                 /* Update CSTS.RDY based on CC.EN */
                 nvme_dev->cntrl_reg[NVME_CTST] &= ~(CC_EN);
+            } else if (val & MASK(2, 14)) {
+                /* Check if the user has requested shutdown */
+                nvme_cntrl_write_config(nvme_dev, NVME_CC, val, DWORD);
+                nvme_dev->cntrl_reg[NVME_CTST] |=  CSTS_SHST_COMPLETE;
             } else {
                 /* Writes before/after CC.EN is set */
                 nvme_cntrl_write_config(nvme_dev, NVME_CC, val, DWORD);
