@@ -1304,6 +1304,7 @@ static uint32_t adm_cmd_format_nvm(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)
     uint64_t old_size;
     uint32_t dw10 = cmd->cdw10;
     uint32_t nsid, block_size;
+    uint32_t ns_start, ns_end;
     uint8_t pil = (dw10 >> 5) & 0x8;
     uint8_t pi = (dw10 >> 5) & 0x7;
     uint8_t meta_loc = dw10 & 0x10;
@@ -1316,79 +1317,92 @@ static uint32_t adm_cmd_format_nvm(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)
         return FAIL;
     }
 
+#define NVME_ALL_NAMESPACES	0xffffffff
     nsid = cmd->nsid;
-    if (nsid > n->num_namespaces || nsid == 0) {
+    if (((nsid != NVME_ALL_NAMESPACES) && nsid > n->num_namespaces) ||
+		    nsid == 0) {
         LOG_NORM("%s(): bad nsid:%d", __func__, nsid);
         sf->sc = NVME_SC_INVALID_NAMESPACE;
         return FAIL;
     }
 
-    disk = &n->disk[nsid - 1];
-    if ((lba_idx) > disk->idtfy_ns.nlbaf) {
-        LOG_NORM("%s(): Invalid format %x, lbaf out of range", __func__, dw10);
-        sf->sc = NVME_INVALID_FORMAT;
-        return FAIL;
+    if (nsid == NVME_ALL_NAMESPACES) {
+        /* Format all namespaces */
+        ns_start = 1;
+        ns_end = n->num_namespaces + 1;
+    } else {
+        ns_start = nsid;
+        ns_end = nsid + 1;
     }
-    if (pi) {
-        if (pil && !(disk->idtfy_ns.dpc & 0x10)) {
-            LOG_NORM("%s(): pi requested as last 8 bytes, dpc:%x",
-                __func__, disk->idtfy_ns.dpc);
+
+    for (nsid = ns_start; nsid < ns_end; nsid++) {
+        disk = &n->disk[nsid - 1];
+        if ((lba_idx) > disk->idtfy_ns.nlbaf) {
+            LOG_NORM("%s(): Invalid format %x, lbaf out of range", __func__, dw10);
             sf->sc = NVME_INVALID_FORMAT;
             return FAIL;
         }
-        if (!pil && !(disk->idtfy_ns.dpc & 0x8)) {
-            LOG_NORM("%s(): pi requested as first 8 bytes, dpc:%x",
-                __func__, disk->idtfy_ns.dpc);
+        if (pi) {
+            if (pil && !(disk->idtfy_ns.dpc & 0x10)) {
+                LOG_NORM("%s(): pi requested as last 8 bytes, dpc:%x",
+                    __func__, disk->idtfy_ns.dpc);
+                sf->sc = NVME_INVALID_FORMAT;
+                return FAIL;
+            }
+            if (!pil && !(disk->idtfy_ns.dpc & 0x8)) {
+                LOG_NORM("%s(): pi requested as first 8 bytes, dpc:%x",
+                    __func__, disk->idtfy_ns.dpc);
+                sf->sc = NVME_INVALID_FORMAT;
+                return FAIL;
+            }
+            if (!((disk->idtfy_ns.dpc & 0x7) & (1 << (pi - 1)))) {
+                LOG_NORM("%s(): Invalid pi type:%d, dpc:%x", __func__,
+                    pi, disk->idtfy_ns.dpc);
+                sf->sc = NVME_INVALID_FORMAT;
+                return FAIL;
+            }
+        }
+        if (meta_loc && disk->idtfy_ns.lbafx[lba_idx].ms &&
+                !(disk->idtfy_ns.mc & 1)) {
+            LOG_NORM("%s(): Invalid meta location:%x, mc:%x", __func__,
+                meta_loc, disk->idtfy_ns.mc);
             sf->sc = NVME_INVALID_FORMAT;
             return FAIL;
         }
-        if (!((disk->idtfy_ns.dpc & 0x7) & (1 << (pi - 1)))) {
-            LOG_NORM("%s(): Invalid pi type:%d, dpc:%x", __func__,
-                pi, disk->idtfy_ns.dpc);
+        if (!meta_loc && disk->idtfy_ns.lbafx[lba_idx].ms &&
+                !(disk->idtfy_ns.mc & 2)) {
+            LOG_NORM("%s(): Invalid meta location:%x, mc:%x", __func__,
+                meta_loc, disk->idtfy_ns.mc);
             sf->sc = NVME_INVALID_FORMAT;
             return FAIL;
         }
-    }
-    if (meta_loc && disk->idtfy_ns.lbafx[lba_idx].ms &&
-            !(disk->idtfy_ns.mc & 1)) {
-        LOG_NORM("%s(): Invalid meta location:%x, mc:%x", __func__,
-            meta_loc, disk->idtfy_ns.mc);
-        sf->sc = NVME_INVALID_FORMAT;
-        return FAIL;
-    }
-    if (!meta_loc && disk->idtfy_ns.lbafx[lba_idx].ms &&
-            !(disk->idtfy_ns.mc & 2)) {
-        LOG_NORM("%s(): Invalid meta location:%x, mc:%x", __func__,
-            meta_loc, disk->idtfy_ns.mc);
-        sf->sc = NVME_INVALID_FORMAT;
-        return FAIL;
-    }
 
-    if (nvme_close_storage_disk(disk)) {
-        return FAIL;
-    }
+        if (nvme_close_storage_disk(disk)) {
+            return FAIL;
+        }
 
-    old_size = disk->idtfy_ns.nsze * (1 << disk->idtfy_ns.lbafx[
-        disk->idtfy_ns.flbas & 0xf].lbads);
-    block_size = 1 << disk->idtfy_ns.lbafx[lba_idx].lbads;
+        old_size = disk->idtfy_ns.nsze * (1 << disk->idtfy_ns.lbafx[
+            disk->idtfy_ns.flbas & 0xf].lbads);
+        block_size = 1 << disk->idtfy_ns.lbafx[lba_idx].lbads;
 
-    LOG_NORM("%s(): called, previous: flbas:%x ds:%d ms:%d dps:%x"\
-             "new: flbas:%x ds:%d ms:%d dpc:%x", __func__, disk->idtfy_ns.flbas,
-             disk->idtfy_ns.lbafx[disk->idtfy_ns.flbas & 0xf].lbads,
-             disk->idtfy_ns.lbafx[disk->idtfy_ns.flbas & 0xf].ms,
-             disk->idtfy_ns.dps, lba_idx | meta_loc,
-             disk->idtfy_ns.lbafx[lba_idx].lbads,
-             disk->idtfy_ns.lbafx[lba_idx].ms,
-             pil | pi);
+        LOG_NORM("%s(): called ns:%d, previous: flbas:%x ds:%d ms:%d dps:%x"\
+                 "new: flbas:%x ds:%d ms:%d dpc:%x", __func__, nsid, disk->idtfy_ns.flbas,
+                 disk->idtfy_ns.lbafx[disk->idtfy_ns.flbas & 0xf].lbads,
+                 disk->idtfy_ns.lbafx[disk->idtfy_ns.flbas & 0xf].ms,
+                 disk->idtfy_ns.dps, lba_idx | meta_loc,
+                 disk->idtfy_ns.lbafx[lba_idx].lbads,
+                 disk->idtfy_ns.lbafx[lba_idx].ms,
+                 pil | pi);
 
-    disk->idtfy_ns.nuse = 0;
-    disk->idtfy_ns.flbas = lba_idx | meta_loc;
-    disk->idtfy_ns.nsze = old_size / block_size;
-    disk->idtfy_ns.ncap = disk->idtfy_ns.nsze;
-    disk->idtfy_ns.dps = pil | pi;
+        disk->idtfy_ns.nuse = 0;
+        disk->idtfy_ns.flbas = lba_idx | meta_loc;
+        disk->idtfy_ns.nsze = old_size / block_size;
+        disk->idtfy_ns.ncap = disk->idtfy_ns.nsze;
+        disk->idtfy_ns.dps = pil | pi;
 
-    if (nvme_create_storage_disk(n->instance, nsid, disk, n)) {
-        return FAIL;
+        if (nvme_create_storage_disk(n->instance, nsid, disk, n)) {
+            return FAIL;
+        }
     }
 
     return 0;

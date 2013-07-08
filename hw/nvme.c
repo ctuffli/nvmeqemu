@@ -929,6 +929,7 @@ static void read_identify_cns(NVMEState *n)
     n->idtfy_ctrl->oacs = 0x2;  /* set due to adm_cmd_format_nvm() */
     n->idtfy_ctrl->oacs |= 0x4; /* set for adm_cmd_act_fw() & adm_cmd_act_dl()*/
     n->idtfy_ctrl->oncs = 0x4;  /* dataset mgmt cmd */
+    n->idtfy_ctrl->fna = 0x1;   /* format all NS */
 
     n->idtfy_ctrl->vid = 0x8086;
     n->idtfy_ctrl->ssvid = 0x0111;
