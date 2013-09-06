@@ -801,6 +801,7 @@ static uint32_t adm_cmd_abort(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)
             return 0;
         }
     }
+    cqe->cmd_specific = 0x1;
     LOG_NORM("Abort failed, could not find corresponding cmdid:%d on sq:%d",
         c->cmdid, sq->id);
     return FAIL;
