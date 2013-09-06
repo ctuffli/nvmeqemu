@@ -815,7 +815,7 @@ static void pci_space_init(PCIDevice *pci_dev)
     /*other notation:  pci_config[OFFSET] = 0xff; */
 
     LOG_NORM("%s(): Setting PCI Interrupt PIN A", __func__);
-    pci_conf[PCI_INTERRUPT_PIN] = 1;
+    pci_config_set_interrupt_pin(pci_conf, 1);
 
     n->nvectors = NVME_MSIX_NVECTORS;
     n->bar0_size = NVME_REG_SIZE;
