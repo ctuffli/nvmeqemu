@@ -597,6 +597,8 @@ static uint32_t adm_cmd_smart_info(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)
         smart_log.critical_warning |= 1 << 1;
     }
 
+    n->temp_warn_issued = 0;
+
     len = min(PAGE_SIZE - (cmd->prp1 % PAGE_SIZE), trans_len);
     nvme_dma_mem_write(cmd->prp1, (uint8_t *)&smart_log, len);
     if (len < trans_len) {
