@@ -615,6 +615,9 @@ static void nvme_pci_write_config(PCIDevice *pci_dev,
         /* Defaulting BIST value to 0x00 */
         pci_set_byte(&pci_dev->config[PCI_BIST], (uint8_t) 0x00);
     }
+    pcie_cap_flr_write_config(pci_dev, addr, val, len);
+    msi_write_config(pci_dev, addr, val, len);
+    msix_write_config(pci_dev, addr, val, len);
 
     return;
 }
@@ -761,13 +764,13 @@ static void clear_nvme_device(NVMEState *n)
 
 /*********************************************************************
     Function     :    do_nvme_reset
-    Description  :    TODO: Not yet implemented
+    Description  :    TODO: Partially implemented
     Return Type  :    void
     Arguments    :    NVMEState * : Pointer to NVME device state
 *********************************************************************/
 static void do_nvme_reset(NVMEState *n)
 {
-    (void)n;
+    clear_nvme_device(n);
 }
 
 /*********************************************************************
@@ -780,6 +783,7 @@ static void qdev_nvme_reset(DeviceState *dev)
 {
     NVMEState *n = DO_UPCAST(NVMEState, dev.qdev, dev);
     do_nvme_reset(n);
+    msi_reset(&n->dev);
 }
 
 
@@ -811,6 +815,7 @@ static void pci_space_init(PCIDevice *pci_dev)
     /* TODO: What with the rest of PCI fields? Capabilities? */
     msi_init(pci_dev, 0, 1, true, true);
     pcie_cap_init(pci_dev, 0, PCI_EXP_TYPE_ENDPOINT, 0);
+    pcie_cap_flr_init(pci_dev);
 
     /*other notation:  pci_config[OFFSET] = 0xff; */
 

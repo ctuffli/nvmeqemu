@@ -410,7 +410,7 @@ static uint32_t adm_cmd_alloc_cq(NVMEState *n, NVMECmd *cmd, NVMECQE *cqe)
         return FAIL;
     }
 
-    /* check if CQ exists., If yes return error */
+    /* check if CQ exists. If yes return error */
     if (!adm_check_cqid(n, c->qid)) {
         LOG_NORM("%s():Invalid CQ ID %d\n", __func__, c->qid);
         sf->sct = NVME_SCT_CMD_SPEC_ERR;
