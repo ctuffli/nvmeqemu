@@ -507,6 +507,7 @@ typedef struct NVMEState {
     DiskInfo *disk;
     uint32_t ns_size;
     uint32_t num_namespaces;
+    uint32_t mdts;  // Max Data Transfer Size
     uint32_t instance;
 
     time_t start_time;

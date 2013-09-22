@@ -946,7 +946,7 @@ static void read_identify_cns(NVMEState *n)
     n->idtfy_ctrl->npss = NO_POWER_STATE_SUPPORT;
     n->idtfy_ctrl->awun = 0xff;
     n->idtfy_ctrl->lpa = 1 << 0;
-    n->idtfy_ctrl->mdts = 5; /* 128k max transfer */
+    n->idtfy_ctrl->mdts = n->mdts;
 
     power = (struct power_state_description *)&(n->idtfy_ctrl->psd0);
     power->mp = 1;
@@ -1160,6 +1160,7 @@ static PCIDeviceInfo nvme_info = {
     .qdev.props = (Property[]) {
         DEFINE_PROP_UINT32("namespaces", NVMEState, num_namespaces, 1),
         DEFINE_PROP_UINT32("size", NVMEState, ns_size, 512),
+        DEFINE_PROP_UINT32("mdts", NVMEState, mdts, 5), /* 128k max transfer */
         DEFINE_PROP_END_OF_LIST(),
     }
 };
