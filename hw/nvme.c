@@ -784,6 +784,7 @@ static void qdev_nvme_reset(DeviceState *dev)
     NVMEState *n = DO_UPCAST(NVMEState, dev.qdev, dev);
     do_nvme_reset(n);
     msi_reset(&n->dev);
+    msix_reset(&n->dev);
 }
 
 
