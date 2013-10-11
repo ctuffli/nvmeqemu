@@ -523,7 +523,7 @@ int nvme_create_storage_disk(uint32_t instance, uint32_t nsid, DiskInfo *disk,
     uint64_t size, blks;
     char str[64];
 
-    snprintf(str, sizeof(str), "nvme_disk%d_n%d.img", instance, nsid);
+    snprintf(str, sizeof(str), "/opt/nvmeqemu/disks/nvme_disk%d_n%d.img", instance, nsid);
     disk->nsid = nsid;
 
     disk->fd = open(str, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
