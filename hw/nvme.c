@@ -921,7 +921,9 @@ static void read_identify_cns(NVMEState *n)
     }
     pstrcpy((char *)n->idtfy_ctrl->mn, sizeof(n->idtfy_ctrl->mn),
         "Qemu NVMe Driver 0xabcd");
-    pstrcpy((char *)n->idtfy_ctrl->sn, sizeof(n->idtfy_ctrl->sn), "NVMeQx1000");
+    snprintf((char *)n->idtfy_ctrl->sn, sizeof(n->idtfy_ctrl->sn),
+            "NQ%02x%016lx",
+            n->instance, be64toh(*((uint64_t *)qemu_uuid)));
     pstrcpy((char *)n->idtfy_ctrl->fr, sizeof(n->idtfy_ctrl->fr), "012345");
 
     /* TODO: fix this hardcoded values !!!
