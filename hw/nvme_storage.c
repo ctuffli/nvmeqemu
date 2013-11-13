@@ -522,8 +522,19 @@ int nvme_create_storage_disk(uint32_t instance, uint32_t nsid, DiskInfo *disk,
     uint32_t blksize, lba_idx;
     uint64_t size, blks;
     char str[64];
+    uint32_t pos = 0;
 
-    snprintf(str, sizeof(str), "/opt/nvmeqemu/disks/nvme_disk%d_n%d.img", instance, nsid);
+    if (n->ns_path) {
+        if (n->ns_path[strlen(n->ns_path) - 1] == '/') {
+            n->ns_path[strlen(n->ns_path) - 1] = '\0';
+        }
+        pos += snprintf(str, sizeof(str), "%s/", n->ns_path);
+    }
+    if (qemu_name) {
+        pos += snprintf(str + pos, sizeof(str) - pos, "%s_", qemu_name);
+    }
+    pos += snprintf(str + pos, sizeof(str) - pos, "nvme_disk%d_n%d.img",
+            instance, nsid);
     disk->nsid = nsid;
 
     disk->fd = open(str, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);

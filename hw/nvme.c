@@ -1162,6 +1162,7 @@ static PCIDeviceInfo nvme_info = {
         DEFINE_PROP_UINT32("namespaces", NVMEState, num_namespaces, 1),
         DEFINE_PROP_UINT32("size", NVMEState, ns_size, 512),
         DEFINE_PROP_UINT32("mdts", NVMEState, mdts, 5), /* 128k max transfer */
+        DEFINE_PROP_STRING("path", NVMEState, ns_path),
         DEFINE_PROP_END_OF_LIST(),
     }
 };
