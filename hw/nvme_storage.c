@@ -250,6 +250,7 @@ uint8_t nvme_io_command(NVMEState *n, NVMECmd *sqe, NVMECQE *cqe)
 
     if (disk->idtfy_ns.flbas & 0x10) {
         data_size += (disk->idtfy_ns.lbafx[lba_idx].ms * (e->nlb + 1));
+        nvme_blk_sz += disk->idtfy_ns.lbafx[lba_idx].ms;
     }
 
     if (n->idtfy_ctrl->mdts && data_size > PAGE_SIZE *
