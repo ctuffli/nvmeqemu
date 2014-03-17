@@ -782,9 +782,14 @@ static void do_nvme_reset(NVMEState *n)
 static void qdev_nvme_reset(DeviceState *dev)
 {
     NVMEState *n = DO_UPCAST(NVMEState, dev.qdev, dev);
+    unsigned int v;
     do_nvme_reset(n);
     msi_reset(&n->dev);
     msix_reset(&n->dev);
+
+    for (v = 0; v < n->nvectors; v++) {
+        msix_vector_use(&n->dev, v);
+    }
 }
 
 
@@ -1075,10 +1080,6 @@ static int pci_nvme_init(PCIDevice *pci_dev)
 
     /* Defaulting the async notification to all temperature and threshold */
     n->feature.asynchronous_event_configuration = 0x3;
-
-    for (ret = 0; ret < n->nvectors; ret++) {
-        msix_vector_use(&n->dev, ret);
-    }
 
     /* Update the Identify Space of the controller */
     read_identify_cns(n);
